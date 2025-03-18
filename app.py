@@ -36,6 +36,7 @@ class ImageUploaderApp(QMainWindow):
         self.camera = None
         self.current_image = None
         self.captured_image = None
+        self.camera_resolution = (1920, 1080)  # Full HD resolution
         
         # Create UI
         self.init_ui()
@@ -107,8 +108,18 @@ class ImageUploaderApp(QMainWindow):
         self.camera = cv2.VideoCapture(0)
         if not self.camera.isOpened():
             self.show_camera_placeholder()
-        else:
-            self.timer.start(30)  # 30ms update interval
+            return
+            
+        # Try to set camera resolution to Full HD
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_resolution[0])
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_resolution[1])
+        
+        # Get actual resolution (might be different from requested)
+        actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+        actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        print(f"Camera resolution: {actual_width}x{actual_height}")
+        
+        self.timer.start(30)  # 30ms update interval
     
     def show_camera_placeholder(self):
         self.image_label.setText("Camera Not Found")
@@ -159,15 +170,19 @@ class ImageUploaderApp(QMainWindow):
 
         if self.captured_image:
             try:
-                # Save to a temporary file
+                # Save to a temporary file with high quality
                 temp_file = "temp_upload.jpg"
-                self.captured_image.save(temp_file, quality=95)  # Added quality parameter for better image quality
+                # Use PNG for maximum quality if needed
+                if self.camera and self.camera.isOpened():
+                    self.captured_image.save(temp_file, "PNG")  # Lossless format for camera captures
+                else:
+                    self.captured_image.save(temp_file, "JPEG", quality=95)  # High quality JPEG for uploaded images
                 
                 # Initialize S3 client using environment variables or config file
                 cdn_handler = boto3.client('s3',
                     endpoint_url='https://nyc3.digitaloceanspaces.com',
-                    aws_access_key_id=aws_access_key_id,      # Should come from environment variable
-                    aws_secret_access_key=aws_secret_access_key   # Should come from environment variable
+                    aws_access_key_id=aws_access_key_id,
+                    aws_secret_access_key=aws_secret_access_key
                 )
                 
                 # Generate a unique filename using timestamp
