@@ -10,24 +10,27 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
-# Set the values of your computer vision endpoint and computer vision key
-# as environment variables:
-try:
-    aws_access_key_id = os.getenv("access_ID")
-    aws_secret_access_key = os.getenv("access_Key")
-    
-    print("Debug - Access Key ID:", aws_access_key_id)
-    print("Debug - Secret Key length:", len(aws_secret_access_key) if aws_secret_access_key else 0)
-    
-except KeyError:
-    print("Missing environment variable 'access_ID' or 'access_Key'")
-    print("Set them before running this sample.")
-    exit()
+
 
 class ImageUploaderApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        load_dotenv()
+        # Set the values of your computer vision endpoint and computer vision key
+        # as environment variables:
+        try:
+            self.aws_access_key_id = os.getenv("access_ID")
+            self.aws_secret_access_key = os.getenv("access_Key")
+            
+            print("Debug - Access Key ID:", self.aws_access_key_id)
+            print("Debug - Secret Key length:", len(self.aws_secret_access_key) if self.aws_secret_access_key else 0)
+            
+        except KeyError:
+            print("Missing environment variable 'access_ID' or 'access_Key'")
+            print("Set them before running this sample.")
+            exit()
+
         self.setWindowTitle("Image Uploader")
         self.setGeometry(100, 100, 800, 600)
         self.setFixedSize(800,600)
@@ -181,8 +184,8 @@ class ImageUploaderApp(QMainWindow):
                 # Initialize S3 client using environment variables or config file
                 cdn_handler = boto3.client('s3',
                     endpoint_url='https://nyc3.digitaloceanspaces.com',
-                    aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key
+                    aws_access_key_id=self.aws_access_key_id,
+                    aws_secret_access_key=self.aws_secret_access_key
                 )
                 
                 # Generate a unique filename using timestamp
